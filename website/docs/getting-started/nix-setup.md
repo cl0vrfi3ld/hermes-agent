@@ -891,9 +891,10 @@ External flakes can override the package directly:
   inputs.hermes-agent.url = "github:NousResearch/hermes-agent";
   outputs = { hermes-agent, nixpkgs, ... }: {
     nixpkgs.overlays = [ hermes-agent.overlays.default ];
-    # Then:
-    #   pkgs.hermes-agent.override { extraPythonPackages = [...]; }
-    #   pkgs.hermes-agent.override { extraDependencyGroups = [ "honcho" ]; }
+    # Then (the function form keeps the groups the default package ships;
+    # a plain attrset replaces them and drops anthropic, messaging, ...):
+    #   pkgs.hermes-agent.override (prev: { extraPythonPackages = (prev.extraPythonPackages or [ ]) ++ [...]; })
+    #   pkgs.hermes-agent.override (prev: { extraDependencyGroups = (prev.extraDependencyGroups or [ ]) ++ [ "honcho" ]; })
   };
 }
 ```
@@ -1037,8 +1038,8 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 | `extraArgs` | `listOf str` | `[]` | Extra args for `hermes gateway` |
 | `extraPackages` | `listOf package` | `[]` | Extra packages available to the agent. Added to the hermes user's per-user profile so terminal commands, skills, and cron jobs all see them |
 | `extraPlugins` | `listOf package` | `[]` | Directory plugin packages to symlink into `$HERMES_HOME/plugins/`. Each must contain `plugin.yaml` |
-| `extraPythonPackages` | `listOf package` | `[]` | Python packages added to PYTHONPATH for entry-point plugin discovery. Use the selected package’s `python.pkgs` |
-| `extraDependencyGroups` | `listOf str` | `[]` | pyproject.toml optional extras to include in the sealed venv (e.g. `["honcho"]`). Resolved by uv — no collisions |
+| `extraPythonPackages` | `listOf package` | `[]` | Python packages added to PYTHONPATH for entry-point plugin discovery, on top of the selected package's own. Use the selected package’s `python.pkgs` |
+| `extraDependencyGroups` | `listOf str` | `[]` | pyproject.toml optional extras to include in the sealed venv (e.g. `["honcho"]`), added to the groups the selected package already ships. Resolved by uv — no collisions |
 | `restart` | `str` | `"always"` | The systemd `Restart=` policy. macOS does not use it. |
 | `restartSec` | `int` | `5` | The systemd `RestartSec=` value. macOS does not use it. |
 
